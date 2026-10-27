@@ -13,7 +13,7 @@ export const Route = createRootRoute({
       { title: APP_NAME },
       {
         name: "description",
-        content: "Seattle’s 2½-hour ring — roads, reach, and mid-November conditions.",
+        content: "Trippn' — roads you can drive from Seattle, and houses for November 25–29.",
       },
       { name: "theme-color", content: "#101612" },
     ],

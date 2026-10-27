@@ -564,14 +564,16 @@ function PanelBody({ bare, mode }: { bare: boolean; mode: "all" | "places" | "la
           </button>
         </header>
       )}
+      <div className="shrink-0 border-b border-line px-3 pt-3">
+        <DriveReach />
+      </div>
       {showLayers && showPlaces ? (
-        <div className="max-h-[58%] min-h-0 shrink overflow-y-auto px-3 pt-3">
+        <div className="max-h-[42%] min-h-0 shrink overflow-y-auto px-3 pt-3">
           <Season month={month} setMonth={setMonth} />
           <MapCatalog />
         </div>
       ) : null}
       <div data-places className="min-h-0 flex-1 overflow-y-auto px-3 pt-3 pb-3">
-        <DriveReach />
         {showLayers && !showPlaces ? (
           <>
             <Season month={month} setMonth={setMonth} />

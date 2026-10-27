@@ -60,7 +60,7 @@ Ten named houses were picked because a published yearly range could land near $2
 
 The list must obey the filters. Default drive max is 3¼ hours (195 minutes), so Chelan at 3.5 hours is off until the window grows. A house whose published nightly range no longer overlaps the price handles drops out. The heading counts how many of the ten still fit (often nine).
 
-Houses, in rank order: Ocean Shores Getaway, Hood Canal waterfront (Union), Wenatchee Oasis, Cle Elum cabins, All About the Lake, The Lookout (Chelan), Westport retreat, Port Angeles houses, Long Beach houses, All Seasons Getaway (Leavenworth). Listing URLs are in `src/data/picks.ts`. Where there is no single listing, the card says so and the town’s model is used.
+Houses, in rank order: Ocean Shores Getaway, Hood Canal waterfront (Union), Wenatchee Oasis, Cle Elum cabins, All About the Lake, The Lookout (Chelan), Westport retreat, Port Angeles houses, Long Beach houses, All Seasons Getaway (Leavenworth). Listing URLs are in `src/data/picks.ts`. Ocean Shores, Port Angeles, and Long Beach have no single public listing, so those cards open a dated Airbnb search of the town for November 25–29. That search is not a held house. The list starts open.
 
 Stars save a house or a stop in `localStorage` (`ring-favorites`). Saved is a filter, not a second inventory.
 

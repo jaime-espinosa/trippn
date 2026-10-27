@@ -40,6 +40,8 @@ export const PICKS: PickStay[] = [
     nightlyHigh: 716,
     why: "The best chance of a 4-bedroom that sleeps 8 inside this budget. Hot tub and a fireplace, a short hop from the beach.",
     rate: "Published $248–$716 a night, about $1,000–$2,900 for four nights before fees. Winter often prices under the top of that.",
+    href: "https://www.airbnb.com/s/homes?query=Ocean%20Shores%2C%20Washington&checkin=2026-11-25&checkout=2026-11-29&adults=4&children=4&min_bedrooms=4",
+    hrefLabel: "Airbnb search",
   },
   {
     id: "hood-canal-union",
@@ -156,6 +158,8 @@ export const PICKS: PickStay[] = [
     ferry: true,
     why: "Wet in November and priced like it. Stay in town, not up at Hurricane Ridge. The drive includes the Bainbridge ferry.",
     rate: "No single house had a public rate in this band. The town’s November houses sit about $200–$440 a night.",
+    href: "https://www.airbnb.com/s/homes?query=Port%20Angeles%2C%20Washington&checkin=2026-11-25&checkout=2026-11-29&adults=4&children=4&min_bedrooms=4",
+    hrefLabel: "Airbnb search",
   },
   {
     id: "long-beach",
@@ -170,6 +174,8 @@ export const PICKS: PickStay[] = [
     lon: -124.054,
     why: "Same idea as Ocean Shores, a bit farther down the coast. Deep stock of beach houses except on holiday weeks.",
     rate: "No single house had a public rate in this band.",
+    href: "https://www.airbnb.com/s/homes?query=Long%20Beach%2C%20Washington&checkin=2026-11-25&checkout=2026-11-29&adults=4&children=4&min_bedrooms=4",
+    hrefLabel: "Airbnb search",
   },
   {
     id: "all-seasons",

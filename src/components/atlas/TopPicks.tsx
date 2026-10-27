@@ -11,7 +11,7 @@ function cx(...parts: (string | false | null | undefined)[]) {
 }
 
 export function TopPicks({
-  startOpen = false,
+  startOpen = true,
   onMap,
   bedrooms = 4,
   guests = 8,
