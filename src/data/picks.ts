@@ -240,3 +240,18 @@ export function pickFits(pick: PickStay, filter: PickFilter): boolean {
 export function picksWithin(filter: PickFilter): PickStay[] {
   return PICKS.filter((pick) => pickFits(pick, filter)).slice(0, 10);
 }
+
+/** Listing-style photos for the shortlist. Not a held photo of that exact house. */
+export const PICK_PHOTOS: Record<string, string[]> = {
+  "ocean-shores-getaway": ["/photos/stays/ocean-a.jpg", "/photos/stays/ocean-b.jpg", "/photos/stays/coast-b.jpg"],
+  "hood-canal-union": ["/photos/stays/hood-a.jpg", "/photos/stays/hood-b.jpg"],
+  "wenatchee-oasis": ["/photos/stays/wen-a.jpg", "/photos/stays/wen-b.png"],
+  "cle-elum": ["/photos/stays/cleelum-a.jpg", "/photos/stays/cleelum-b.png"],
+  "all-about-the-lake": ["/photos/stays/lake-a.jpg", "/photos/stays/lake-b.jpg"],
+  "chelan-lookout": ["/photos/stays/lake-a.jpg", "/photos/stays/leav-b.jpg"],
+  "westport-retreat": ["/photos/stays/west-a.jpg", "/photos/stays/coast-a.jpg", "/photos/stays/coast-b.jpg"],
+  "port-angeles": ["/photos/stays/pa-a.jpg", "/photos/stays/pa-b.jpg"],
+  "long-beach": ["/photos/stays/coast-a.jpg", "/photos/stays/coast-b.jpg", "/photos/stays/ocean-b.jpg"],
+  "all-seasons": ["/photos/stays/leav-a.jpg", "/photos/stays/leav-b.jpg"],
+};
+

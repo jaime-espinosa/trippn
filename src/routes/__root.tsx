@@ -3,7 +3,7 @@ import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import appCss from "../styles.css?url";
 
-const APP_NAME = "Ring";
+const APP_NAME = "Trippn'";
 
 export const Route = createRootRoute({
   head: () => ({

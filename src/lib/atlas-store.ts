@@ -72,6 +72,8 @@ type AtlasState = {
   priceMax: number;
   driveMin: number;
   driveMax: number;
+  reachFit: number;
+  spotlight: { id: string; name: string; lat: number; lon: number }[];
   box: Box | null;
   drawArmed: boolean;
   tempMode: "normals" | "forecast";
@@ -95,6 +97,8 @@ type AtlasState = {
   setCatalog: (catalog: boolean) => void;
   setPrice: (min: number, max: number) => void;
   setDrive: (min: number, max: number) => void;
+  bumpReach: () => void;
+  setSpotlight: (pins: { id: string; name: string; lat: number; lon: number }[]) => void;
   setBox: (box: Box | null) => void;
   clearBox: () => void;
   setDrawArmed: (armed: boolean) => void;
@@ -159,6 +163,8 @@ export const useAtlas = create<AtlasState>((set, get) => ({
   priceMax: 1200,
   driveMin: 60,
   driveMax: 195,
+  reachFit: 0,
+  spotlight: [],
   box: null,
   drawArmed: false,
   tempMode: "normals",
@@ -185,6 +191,8 @@ export const useAtlas = create<AtlasState>((set, get) => ({
   setCatalog: (catalog) => set({ catalog }),
   setPrice: (priceMin, priceMax) => set({ priceMin, priceMax }),
   setDrive: (driveMin, driveMax) => set({ driveMin, driveMax }),
+  bumpReach: () => set((s) => ({ reachFit: s.reachFit + 1, spotlight: [] })),
+  setSpotlight: (spotlight) => set((s) => ({ spotlight, reachFit: s.reachFit + 1 })),
   setBox: (box) => set({ box, drawArmed: false }),
   clearBox: () => set({ box: null }),
   setDrawArmed: (drawArmed) => set({ drawArmed }),

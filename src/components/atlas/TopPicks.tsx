@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { MapPin, Star } from "lucide-react";
-import { picksWithin, PICKS, type PickFilter } from "@/data/picks";
+import { ChevronLeft, ChevronRight, MapPin, Star, X } from "lucide-react";
+import { PICK_PHOTOS, picksWithin, PICKS, type PickStay, type PickFilter } from "@/data/picks";
 import { staySpots } from "@/data/market";
 import { pickKey, stopKey, useFavorites } from "@/lib/favorites";
 import { useAtlas } from "@/lib/atlas-store";
@@ -37,8 +37,11 @@ export function TopPicks({
   const driveMin = useAtlas((s) => s.driveMin);
   const driveMax = useAtlas((s) => s.driveMax);
   const box = useAtlas((s) => s.box);
+  const setSpotlight = useAtlas((s) => s.setSpotlight);
+  const setCatalog = useAtlas((s) => s.setCatalog);
   const [savedOnly, setSavedOnly] = useState(false);
   const [open, setOpen] = useState(startOpen);
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   useEffect(() => {
     hydrate();
@@ -102,13 +105,19 @@ export function TopPicks({
           <ol className="space-y-2">
             {shown.map((pick, index) => {
               const on = ids.includes(pickKey(pick.id));
+              const active = activeId === pick.id;
               return (
                 <li key={pick.id} className="rounded-xl border border-line bg-bg p-3">
                   <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm">
-                      <span className="text-muted tabular-nums">{savedOnly ? "★" : index + 1} </span>
-                      <span className="font-display text-xl leading-tight">{pick.name}</span>
-                    </p>
+                    <button type="button" onClick={() => setActiveId(active ? null : pick.id)} className="min-w-0 text-left">
+                      <span className="text-sm">
+                        <span className="text-muted tabular-nums">{savedOnly ? "★" : index + 1} </span>
+                        <span className="font-display text-xl leading-tight underline decoration-line/60 underline-offset-4">{pick.name}</span>
+                      </span>
+                      <span className="mt-1 block text-sm text-muted">
+                        {pick.where} · {pick.drive} · sleeps {pick.guests} · {pick.bedrooms} bedrooms
+                      </span>
+                    </button>
                     <button
                       type="button"
                       aria-pressed={on}
@@ -119,33 +128,28 @@ export function TopPicks({
                       <Star className={cx("size-4", on && "fill-current text-accent")} />
                     </button>
                   </div>
-                  <p className="text-sm text-muted">
-                    {pick.where} · {pick.drive} · sleeps {pick.guests} · {pick.bedrooms} bedrooms
-                  </p>
-                  <p className="mt-1 text-sm text-pretty">{pick.why}</p>
-                  <p className="mt-1 text-xs text-pretty text-muted">{pick.rate}</p>
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {pick.href ? (
-                      <a
-                        href={pick.href}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex h-9 items-center rounded-full border border-line px-2.5 text-sm"
-                      >
-                        {pick.hrefLabel ?? "Listing"}
-                      </a>
-                    ) : null}
-                    {pick.placeId && onMap ? (
-                      <button
-                        type="button"
-                        onClick={() => onMap(pick.placeId!)}
-                        className="inline-flex h-9 items-center gap-1 rounded-full border border-line px-2.5 text-sm"
-                      >
-                        <MapPin className="size-3.5" />
-                        On map
-                      </button>
-                    ) : null}
-                  </div>
+                  {active ? (
+                    <PickDetail
+                      pick={pick}
+                      saved={on}
+                      onRemove={() => {
+                        if (on) toggle(pickKey(pick.id));
+                      }}
+                      onShowAll={() => {
+                        setSpotlight(
+                          fitting.map((item) => ({
+                            id: item.id,
+                            name: item.name,
+                            lat: item.lat,
+                            lon: item.lon,
+                          })),
+                        );
+                        setCatalog(false);
+                      }}
+                    />
+                  ) : (
+                    <p className="mt-2 line-clamp-2 text-sm text-pretty text-muted">{pick.why}</p>
+                  )}
                 </li>
               );
             })}
@@ -173,5 +177,100 @@ export function TopPicks({
         ) : null}
       </details>
     </section>
+  );
+}
+
+function PickDetail({
+  pick,
+  saved,
+  onRemove,
+  onShowAll,
+}: {
+  pick: PickStay;
+  saved: boolean;
+  onRemove: () => void;
+  onShowAll: () => void;
+}) {
+  const photos = PICK_PHOTOS[pick.id] ?? [];
+  const [index, setIndex] = useState(0);
+  const [big, setBig] = useState(false);
+  const photo = photos[index] ?? photos[0];
+  const step = (dir: number) => {
+    if (!photos.length) return;
+    setIndex((current) => (current + dir + photos.length) % photos.length);
+  };
+
+  return (
+    <div className="mt-2">
+      {photo ? (
+        <div className="relative">
+          <button type="button" onClick={() => setBig(true)} className="block w-full" aria-label="Enlarge photo">
+            <img src={photo} alt="" className="h-40 w-full rounded-xl object-cover" />
+          </button>
+          {photos.length > 1 ? (
+            <>
+              <button
+                type="button"
+                aria-label="Previous photo"
+                onClick={() => step(-1)}
+                className="absolute top-1/2 left-1 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-bg/80"
+              >
+                <ChevronLeft className="size-5" />
+              </button>
+              <button
+                type="button"
+                aria-label="Next photo"
+                onClick={() => step(1)}
+                className="absolute top-1/2 right-1 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-bg/80"
+              >
+                <ChevronRight className="size-5" />
+              </button>
+            </>
+          ) : null}
+        </div>
+      ) : null}
+      <p className="mt-1 text-xs text-muted">
+        {photos.length ? `${index + 1} of ${photos.length}. Houses in this country, not a confirmed photo of this listing.` : "No photo yet."}
+      </p>
+      <p className="mt-2 text-sm text-pretty">{pick.why}</p>
+      <p className="mt-1 text-xs text-pretty text-muted">{pick.rate}</p>
+      <div className="mt-2 flex flex-wrap gap-1">
+        <button type="button" onClick={onShowAll} className="inline-flex h-9 items-center gap-1 rounded-full border border-line px-2.5 text-sm">
+          <MapPin className="size-3.5" />
+          Show all on map
+        </button>
+        {pick.href ? (
+          <a href={pick.href} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center rounded-full border border-line px-2.5 text-sm">
+            {pick.hrefLabel ?? "Listing"}
+          </a>
+        ) : null}
+        <button
+          type="button"
+          onClick={onRemove}
+          disabled={!saved}
+          className="inline-flex h-9 items-center rounded-full border border-line px-2.5 text-sm disabled:opacity-40"
+        >
+          Remove from saved
+        </button>
+      </div>
+      {big && photo ? (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label={pick.name}>
+          <button type="button" aria-label="Close photo" onClick={() => setBig(false)} className="absolute top-3 right-3 grid size-11 place-items-center rounded-full bg-bg text-fg">
+            <X className="size-4" />
+          </button>
+          {photos.length > 1 ? (
+            <button type="button" aria-label="Previous photo" onClick={() => step(-1)} className="absolute left-3 grid size-11 place-items-center rounded-full bg-bg text-fg">
+              <ChevronLeft className="size-5" />
+            </button>
+          ) : null}
+          <img src={photo} alt="" className="max-h-[80dvh] max-w-full rounded-xl object-contain" />
+          {photos.length > 1 ? (
+            <button type="button" aria-label="Next photo" onClick={() => step(1)} className="absolute right-3 grid size-11 place-items-center rounded-full bg-bg text-fg">
+              <ChevronRight className="size-5" />
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
   );
 }

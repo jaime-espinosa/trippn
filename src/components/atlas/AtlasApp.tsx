@@ -239,13 +239,14 @@ function MobileChrome({ onRefresh }: { onRefresh: () => void }) {
   const basemap = useAtlas((s) => s.basemap);
   const setBasemap = useAtlas((s) => s.setBasemap);
   const month = useAtlas((s) => s.month);
+  const driveMax = useAtlas((s) => s.driveMax);
   const [tab, setTab] = useState<"places" | "layers" | "stays">("places");
   return (
     <div className="md:hidden">
       <header className="absolute inset-x-0 top-0 z-30 flex items-center gap-2 bg-bg/90 px-3 py-2 backdrop-blur">
         <div className="min-w-0 flex-1">
-          <p className="font-display text-2xl leading-none text-balance">Ring</p>
-          <p className="text-sm text-muted">{monthPhrase(month)} · 2½ hours</p>
+          <p className="font-display text-2xl leading-none text-balance">Trippn'</p>
+          <p className="text-sm text-muted">{monthPhrase(month)} · {hoursText(driveMax)}</p>
         </div>
         <button
           type="button"
@@ -457,8 +458,48 @@ function MapCatalog() {
   );
 }
 
+function hoursText(minutes: number) {
+  const hours = minutes / 60;
+  if (Number.isInteger(hours)) return `${hours} hr`;
+  return `${hours.toFixed(2).replace(/0$/, "")} hr`;
+}
+
+function DriveReach() {
+  const driveMin = useAtlas((s) => s.driveMin);
+  const driveMax = useAtlas((s) => s.driveMax);
+  const setDrive = useAtlas((s) => s.setDrive);
+  const bumpReach = useAtlas((s) => s.bumpReach);
+  return (
+    <div className="mb-3">
+      <div className="mb-1 flex items-baseline justify-between gap-2">
+        <p className="text-xs tracking-wide text-muted uppercase">From Seattle</p>
+        <p className="text-sm tabular-nums">Up to {hoursText(driveMax)}</p>
+      </div>
+      <input
+        type="range"
+        min={120}
+        max={360}
+        step={15}
+        value={Math.min(360, Math.max(120, driveMax))}
+        aria-label="Hours from Seattle"
+        onChange={(event) => {
+          const next = Number(event.target.value);
+          setDrive(Math.min(driveMin, next), next);
+        }}
+        onPointerUp={() => bumpReach()}
+        onKeyUp={() => bumpReach()}
+        className="h-11 w-full"
+      />
+      <p className="text-xs text-pretty text-muted">
+        The orange reach is the roads inside that drive, not a circle. Let go and the map frames it.
+      </p>
+    </div>
+  );
+}
+
 function PanelBody({ bare, mode }: { bare: boolean; mode: "all" | "places" | "layers" }) {
   const month = useAtlas((s) => s.month);
+  const driveMax = useAtlas((s) => s.driveMax);
   const setMonth = useAtlas((s) => s.setMonth);
   const query = useAtlas((s) => s.query);
   const setQuery = useAtlas((s) => s.setQuery);
@@ -493,9 +534,9 @@ function PanelBody({ bare, mode }: { bare: boolean; mode: "all" | "places" | "la
       {bare ? null : (
         <header className="flex shrink-0 items-start justify-between gap-2 border-b border-line px-3 pt-3 pb-3">
           <div className="min-w-0">
-            <p className="font-display text-4xl leading-none text-balance">Ring</p>
+            <p className="font-display text-4xl leading-none text-balance">Trippn'</p>
             <p className="mt-1 text-sm text-pretty text-muted">
-              The 2½-hour edge of Seattle, drawn for {monthPhrase(month)}.
+              Roads you can drive in {hoursText(driveMax)}, drawn for {monthPhrase(month)}.
             </p>
           </div>
           <button
@@ -530,6 +571,7 @@ function PanelBody({ bare, mode }: { bare: boolean; mode: "all" | "places" | "la
         </div>
       ) : null}
       <div data-places className="min-h-0 flex-1 overflow-y-auto px-3 pt-3 pb-3">
+        <DriveReach />
         {showLayers && !showPlaces ? (
           <>
             <Season month={month} setMonth={setMonth} />

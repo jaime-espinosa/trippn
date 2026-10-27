@@ -1,13 +1,9 @@
 import { useEffect, useState } from "react";
 import { Bell, BellOff, Pentagon } from "lucide-react";
 import {
-  DRIVE_CEIL,
-  DRIVE_FLOOR,
   PRICE_BIN,
   PRICE_CEIL,
   PRICE_FLOOR,
-  RING_MINUTES,
-  driveHistogram,
   inBox,
   priceHistogram,
   spotById,
@@ -27,7 +23,6 @@ export function SearchCharts({ checkin, checkout }: { checkin: string; checkout:
   const setPrice = useAtlas((s) => s.setPrice);
   const driveMin = useAtlas((s) => s.driveMin);
   const driveMax = useAtlas((s) => s.driveMax);
-  const setDrive = useAtlas((s) => s.setDrive);
   const box = useAtlas((s) => s.box);
   const drawArmed = useAtlas((s) => s.drawArmed);
   const setDrawArmed = useAtlas((s) => s.setDrawArmed);
@@ -39,15 +34,12 @@ export function SearchCharts({ checkin, checkout }: { checkin: string; checkout:
       Math.round(spot.hours * 60) <= driveMax &&
       inBox(spot.lat, spot.lon, box),
   );
-  const inBoxOnly = staySpots().filter((spot) => inBox(spot.lat, spot.lon, box));
   const priceBins = priceHistogram(inDrive);
-  const driveBins = driveHistogram(inBoxOnly, priceMin, priceMax);
   const open = inDrive.reduce(
     (sum, spot) =>
       sum + (spotVisible(spot, driveMin, driveMax, priceMin, priceMax, box) ? homeCount(spot, priceMin, priceMax) : 0),
     0,
   );
-  const widened = driveMax > RING_MINUTES;
 
   return (
     <div className="space-y-3">
@@ -64,27 +56,9 @@ export function SearchCharts({ checkin, checkout }: { checkin: string; checkout:
         format={(value) => `$${value}`}
         onChange={setPrice}
       />
-      <BandChart
-        title="Drive from Seattle"
-        hint="Open homes by drive time. A longer max adds towns and redraws the reach."
-        bins={driveBins}
-        floor={DRIVE_FLOOR}
-        ceil={DRIVE_CEIL}
-        step={15}
-        min={driveMin}
-        max={driveMax}
-        binSize={30}
-        format={(value) => (value % 60 === 0 ? `${value / 60} hr` : `${value} min`)}
-        onChange={setDrive}
-      />
       <p className="text-xs text-pretty text-muted">
-        {open} modeled homes in this window for November 25–29. This is a typical-asking spread for a house that sleeps 8, not a live scrape. The min and max are sent to the booking sites.
+        {open} modeled homes in this window for November 25–29. This is a typical-asking spread for a house that sleeps 8, not a live scrape. The price handles are sent to the booking sites. Drive time is set on the map side.
       </p>
-      {widened ? (
-        <p className="text-xs text-pretty text-muted">
-          Past 3¼ hours the traced highways stay put and the orange reach is scaled to the new window. Outer towns are mined: Portland, Chelan, Astoria, Forks, Hood River, Spokane, Winthrop, Neah Bay.
-        </p>
-      ) : null}
       <div className="flex flex-wrap gap-1">
         <button
           type="button"

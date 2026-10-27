@@ -15,6 +15,7 @@ import { PLACES, type Place } from "@/data/places";
 import { minutesOf, spotById, spotVisible, staySpots } from "@/data/market";
 import { TRAILS, alltrailsTrail, trailforksMap } from "@/data/trails";
 import { SEGMENT_BY_ID, SEGMENTS, roadPath } from "@/data/routes";
+import { netMinutes, segmentDeadline } from "@/data/reach";
 import driveNet from "@/data/drive-net.json";
 import { useAtlas, type BasemapId } from "@/lib/atlas-store";
 import {
@@ -204,7 +205,11 @@ export function MapView() {
         const north = map.latLngToContainerPoint([center.lat + 0.05, center.lng]);
         const pxPerKm = Math.max(0.15, Math.abs(origin.y - north.y) / (0.05 * 111.32));
         const mile = 1.60934;
-        const open = SEGMENTS.filter((seg) => !seg.water && seg.shade !== false);
+        const open = SEGMENTS.filter((seg) => {
+          if (seg.water || seg.shade === false) return false;
+          const due = segmentDeadline(seg.id);
+          return due != null && due <= useAtlas.getState().driveMax;
+        });
         const paint = (
           list: typeof open,
           radiusMiles: number,
@@ -241,17 +246,16 @@ export function MapView() {
           ctx.drawImage(reachBuffer, 0, 0, size.x, size.y);
           ctx.restore();
         };
-        const scale = Math.max(0.55, Math.min(2.2, useAtlas.getState().driveMax / 195));
-        paint(open, 4 * Math.min(scale, 1.35), "#7eb6d4", 0.32);
+        paint(open, 4, "#7eb6d4", 0.32);
         paint(
           open.filter((seg) => seg.surface !== "gravel"),
-          scale,
+          1,
           "#ff7a18",
           0.7,
         );
         paint(
           open.filter((seg) => seg.surface === "gravel"),
-          scale,
+          1,
           "#e10600",
           0.74,
         );
@@ -398,7 +402,9 @@ export function MapView() {
         const origin = map.latLngToContainerPoint(center);
         const north = map.latLngToContainerPoint([center.lat + 0.05, center.lng]);
         const pxPerKm = Math.max(0.15, Math.abs(origin.y - north.y) / (0.05 * 111.32));
-        const paint = (lines: [number, number][][], color: string, km: number) => {
+        const maxMinutes = useAtlas.getState().driveMax;
+        const mins = netMinutes();
+        const paint = (lines: [number, number][][], minutes: Float32Array, color: string, km: number) => {
           if (!shedCanvas) return;
           shedBuffer.width = shedCanvas.width;
           shedBuffer.height = shedCanvas.height;
@@ -411,7 +417,9 @@ export function MapView() {
           off.strokeStyle = color;
           off.lineWidth = Math.max(1.8, pxPerKm * km);
           off.beginPath();
-          for (const line of lines) {
+          for (let n = 0; n < lines.length; n++) {
+            if ((minutes[n] ?? 9999) > maxMinutes) continue;
+            const line = lines[n]!;
             for (let i = 0; i < line.length; i++) {
               const point = map!.latLngToContainerPoint(line[i]!);
               if (i === 0) off.moveTo(point.x, point.y);
@@ -424,9 +432,8 @@ export function MapView() {
           ctx.drawImage(shedBuffer, 0, 0, size.x, size.y);
           ctx.restore();
         };
-        const scale = Math.max(0.55, Math.min(2.2, useAtlas.getState().driveMax / 195));
-        paint(DRIVE.drive, "#ff7a18", 0.85 * scale);
-        paint(DRIVE.gravel, "#e10600", 0.55 * scale);
+        paint(DRIVE.drive, mins.drive, "#ff7a18", 0.85);
+        paint(DRIVE.gravel, mins.gravel, "#e10600", 0.55);
       };
 
       const drawAll = () => {
@@ -453,6 +460,12 @@ export function MapView() {
         for (const line of roadLines) {
           const dash = line.water ? "1 10" : undefined;
           if (!on) {
+            line.under.setStyle({ opacity: 0, dashArray: dash });
+            line.core.setStyle({ opacity: 0, dashArray: dash });
+            continue;
+          }
+          const due = segmentDeadline(line.id);
+          if (due != null && due > state.driveMax) {
             line.under.setStyle({ opacity: 0, dashArray: dash });
             line.core.setStyle({ opacity: 0, dashArray: dash });
             continue;
@@ -868,7 +881,9 @@ export function MapView() {
 
       let lastFocus = useAtlas.getState().focusNonce;
       let lastBasemap = useAtlas.getState().basemap;
-      let lastDriveMax = useAtlas.getState().driveMax;
+      let lastReach = useAtlas.getState().reachFit;
+      let pickKey = "";
+      const pickMarkers: Marker[] = [];
       let viewKey = "";
 
       let lastHover: string | null = null;
@@ -884,18 +899,41 @@ export function MapView() {
         syncWaters();
         void syncSmoke();
         if (map) {
+          const pins = state.spotlight;
+          const nextPick = pins.map((pin) => pin.id).join(",");
+          if (nextPick !== pickKey) {
+            pickKey = nextPick;
+            for (const marker of pickMarkers) marker.remove();
+            pickMarkers.length = 0;
+            for (const pin of pins) {
+              const marker = L.marker([pin.lat, pin.lon], {
+                zIndexOffset: 900,
+                icon: L.divIcon({
+                  className: "leaflet-div-icon pick-pin",
+                  iconSize: [16, 16],
+                  iconAnchor: [8, 8],
+                }),
+              }).addTo(map);
+              marker.bindTooltip(pin.name, { direction: "top" });
+              pickMarkers.push(marker);
+            }
+          }
+        }
+        if (map) {
           map.getContainer().style.cursor = state.drawArmed ? "crosshair" : "";
           if (state.drawArmed) map.dragging.disable();
           else if (!dragStart) map.dragging.enable();
           if (!dragStart) paintBox(state.box);
         }
-        if (state.driveMax !== lastDriveMax) {
-          const grewPast = lastDriveMax <= 195 && state.driveMax > 195;
-          lastDriveMax = state.driveMax;
-          schedule();
-          if (grewPast && map) {
-            const pts = staySpots().filter((spot) => minutesOf(spot) <= state.driveMax);
-            const frame = L.latLngBounds(pts.map((spot) => [spot.lat, spot.lon] as [number, number]));
+        if (state.reachFit !== lastReach && map) {
+          lastReach = state.reachFit;
+          const fromPins = state.spotlight.map((pin) => [pin.lat, pin.lon] as [number, number]);
+          const fromStops = staySpots()
+            .filter((spot) => minutesOf(spot) <= state.driveMax && minutesOf(spot) >= state.driveMin)
+            .map((spot) => [spot.lat, spot.lon] as [number, number]);
+          const pts = fromPins.length ? fromPins : fromStops;
+          if (pts.length) {
+            const frame = L.latLngBounds(pts);
             frame.extend(SEATTLE);
             const next = pads();
             map.fitBounds(frame, { paddingTopLeft: next.tl, paddingBottomRight: next.br });
